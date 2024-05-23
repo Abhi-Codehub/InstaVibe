@@ -3,11 +3,15 @@ package com.example.instavibe
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.instavibe.Models.User
 import com.example.instavibe.databinding.ActivitySignupBinding
+import com.example.instavibe.utils.USER_NODE
+import com.example.instavibe.utils.USER_PROFILE_FOLDER
+import com.example.instavibe.utils.uploadImage
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
@@ -19,6 +23,22 @@ class Signup : AppCompatActivity() {
             ActivitySignupBinding.inflate(layoutInflater)
         }
     lateinit var user: User
+
+    private val launcher= registerForActivityResult(ActivityResultContracts.GetContent()){
+        uri->
+        // uniform result identifire
+        uri?.let{
+            // to get image url
+            uploadImage(uri, USER_PROFILE_FOLDER){
+                if(it==null){
+
+                } else {
+                    user.image = it
+                    binding.profileImage.setImageURI(uri)
+                }
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,10 +61,10 @@ class Signup : AppCompatActivity() {
                     result->
                     if(result.isSuccessful){
                         user.name=binding.name.editText?.text.toString()
-                        user.password=binding.name.editText?.text.toString()
-                        user.email=binding.name.editText?.text.toString()
+                        user.email=binding.email.editText?.text.toString()
+                        user.password=binding.password.editText?.text.toString()
 
-                        Firebase.firestore.collection("User")
+                        Firebase.firestore.collection(USER_NODE)
                             .document(Firebase.auth.currentUser!!.uid).set(user)
                             .addOnSuccessListener {
                                 Toast.makeText(this, "Login", Toast.LENGTH_SHORT).show()
@@ -56,6 +76,9 @@ class Signup : AppCompatActivity() {
                 }
 
             }
+        }
+        binding.addImage.setOnClickListener{
+            launcher.launch("image/*")
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
